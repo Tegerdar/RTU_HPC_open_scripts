@@ -1,4 +1,4 @@
-# config.py
+# search/config.py
 import os
 import sys
 from dotenv import load_dotenv
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Export variables for other modules to import
-LDAP_PASSWORD = os.getenv("LDAP_MANAGER_PASSWORD")
+LDAP_PASSWORD = os.getenv("LDAP_PASSWORD")
 LDAP_BASE_DN = os.getenv("LDAP_BASE_DN")
 LDAP_BIND_DN = os.getenv("LDAP_BIND_DN")
 LDAP_URI = os.getenv("LDAP_URI")
