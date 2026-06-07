@@ -5,6 +5,20 @@ from ldap3 import Server, Connection, ALL, SUBTREE
 # Import our secure configuration from the sibling file
 from search.config import LDAP_URI, LDAP_BIND_DN, LDAP_PASSWORD, LDAP_BASE_DN
 
+
+def _first_attr_value(entry, attr_name, default='N/A'):
+    """Return a safe scalar value for an LDAP attribute.
+
+    ldap3 attributes can be scalars, lists/tuples, or missing.
+    """
+    if attr_name not in entry:
+        return default
+
+    value = entry[attr_name].value
+    if isinstance(value, (list, tuple)):
+        return value[0] if value else default
+    return value if value is not None else default
+
 def fetch_all_ldap_users():
     """
     Establishes a synchronous connection to the LDAP server.
@@ -23,20 +37,21 @@ def fetch_all_ldap_users():
                 search_base=LDAP_BASE_DN,
                 search_filter='(uid=*)',
                 search_scope=SUBTREE,
-                attributes=['dn', 'cn', 'mail', 'uid', 'o']
+                attributes=['cn', 'mail', 'uid', 'o']
             )
             
             for entry in conn.entries:
                 # Safely extract values, defaulting to 'N/A' if the attribute doesn't exist
-                uid = entry.uid.value.lower() if 'uid' in entry else None
+                uid_raw = _first_attr_value(entry, 'uid', default=None)
+                uid = str(uid_raw).lower() if uid_raw is not None else None
                 
                 if uid:
                     ldap_master[uid] = {
                         'uid': uid,
-                        'cn': entry.cn.value if 'cn' in entry else 'N/A',
-                        'mail': entry.mail.value if 'mail' in entry else 'N/A',
+                        'cn': _first_attr_value(entry, 'cn'),
+                        'mail': _first_attr_value(entry, 'mail'),
                         'dn': entry.entry_dn,
-                        'ldap_org': entry.o.value if 'o' in entry else 'N/A'
+                        'ldap_org': _first_attr_value(entry, 'o')
                     }
                     
         return ldap_master
